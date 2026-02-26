@@ -8,6 +8,22 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- Password Gate -->
+  <div id="auth-gate" style="display:flex;align-items:center;justify-content:center;min-height:100vh">
+    <div class="card" style="max-width:360px;width:100%;text-align:center">
+      <h1 style="margin-bottom:0.25rem"><span style="color:var(--primary)">Si</span>licon Samples</h1>
+      <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.5rem">Enter password to continue</p>
+      <form id="auth-form">
+        <div class="form-group">
+          <input type="password" id="auth-password" placeholder="Password" autofocus style="text-align:center">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Enter</button>
+        <p id="auth-error" style="color:var(--danger);font-size:0.8rem;margin-top:0.75rem;display:none">Incorrect password</p>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-content" class="hidden">
   <header>
     <div class="container">
       <h1><span>Si</span>licon Samples</h1>
@@ -141,7 +157,34 @@
       <div id="methodology-content"></div>
     </section>
   </main>
+  </div><!-- /app-content -->
 
+  <script>
+    // Password gate — checks against hash so plaintext isn't in source
+    // SHA-256 of "siliconagents"
+    const PASS_HASH = 'd11c025cb961bfb6c4a6a335dbfe08ef2fb13978aea23ecf7975a0a47a39830a';
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    // Check session
+    if (sessionStorage.getItem('si_auth') === '1') {
+      document.getElementById('auth-gate').style.display = 'none';
+      document.getElementById('app-content').classList.remove('hidden');
+    }
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pw = document.getElementById('auth-password').value;
+      if (await sha256(pw) === PASS_HASH) {
+        sessionStorage.setItem('si_auth', '1');
+        document.getElementById('auth-gate').style.display = 'none';
+        document.getElementById('app-content').classList.remove('hidden');
+      } else {
+        document.getElementById('auth-error').style.display = 'block';
+        document.getElementById('auth-password').value = '';
+      }
+    });
+  </script>
   <script src="/experiment.js"></script>
   <script src="/methodology.js"></script>
   <script src="/app.js"></script>
