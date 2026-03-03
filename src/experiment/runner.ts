@@ -2,7 +2,7 @@ import { getDb } from '../data/db.js';
 import { sampleRecords } from '../persona/sampler.js';
 import { buildBackstory } from '../persona/backstory.js';
 import { assignModels } from '../persona/model-assigner.js';
-import { conductInterview } from '../interview/conductor.js';
+import { conductInterview, PROMPT_VERSION, SYSTEM_PROMPT_TEMPLATE } from '../interview/conductor.js';
 import { getQuestionSet } from '../interview/question-bank.js';
 import { checkBudget, getExperimentCost } from './cost-tracker.js';
 import { generateReport, type ValidationReport } from '../validation/report.js';
@@ -17,6 +17,16 @@ export async function runExperiment(
 ): Promise<{ experimentId: number; report: ValidationReport }> {
   const db = getDb();
 
+  // Build full config with prompt provenance
+  const backstoryMode = config.backstoryMode ?? 'first-person';
+  const promptVersion = config.promptVersion ?? PROMPT_VERSION;
+  const configWithMeta = {
+    ...config,
+    backstoryMode,
+    promptVersion,
+    systemPromptTemplate: SYSTEM_PROMPT_TEMPLATE,
+  };
+
   // Create experiment record
   const result = db.prepare(`
     INSERT INTO experiments (name, dataset, persona_count, model_ids, question_set, temperature, budget_limit, status, config_json)
@@ -29,7 +39,7 @@ export async function runExperiment(
     config.questionSetId,
     config.temperature,
     config.budgetLimit,
-    JSON.stringify(config),
+    JSON.stringify(configWithMeta),
   );
 
   const experimentId = Number(result.lastInsertRowid);
@@ -80,7 +90,7 @@ export async function runExperiment(
         household_size: record.household_size,
       };
 
-      const backstory = buildBackstory(demographics, rawData);
+      const backstory = buildBackstory(demographics, rawData, backstoryMode);
 
       const personaResult = insertPersona.run(
         experimentId,

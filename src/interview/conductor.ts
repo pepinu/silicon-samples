@@ -15,7 +15,15 @@ export interface InterviewResponse {
   cost: number;
 }
 
-const SYSTEM_PROMPT_TEMPLATE = `You are a market research analyst simulating how a specific person would respond to a consumer survey. The person you are simulating has the following background:
+/**
+ * Prompt version tracking. Increment when making meaningful changes to the system prompt.
+ * v1: First-person framing ("You are this person...")
+ * v2: Third-person analyst framing (Chapala et al. 2025)
+ * v2.1: Third-person backstory alignment — both prompt AND backstory in third-person
+ */
+export const PROMPT_VERSION = 'v2.1';
+
+export const SYSTEM_PROMPT_TEMPLATE = `You are a market research analyst simulating how a specific person would respond to a consumer survey. The person you are simulating has the following background:
 
 {backstory}
 
@@ -29,7 +37,7 @@ RESPONSE FORMAT:
 - Responses should reflect realistic variation — not every answer should be moderate or agreeable
 - This person has real flaws, contradictions, and imperfect habits — reflect those honestly`;
 
-function buildSystemPrompt(persona: Persona): string {
+export function buildSystemPrompt(persona: Persona): string {
   return SYSTEM_PROMPT_TEMPLATE.replace('{backstory}', persona.backstory);
 }
 

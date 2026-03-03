@@ -12,30 +12,32 @@ const ALL_MODEL_IDS = MODELS.map(m => m.id);
 
 // Pre-flight: check seed pool
 const poolRow = db.prepare(
-  "SELECT COUNT(*) as n FROM seed_records WHERE dataset IN ('bls','uci','kaggle')"
+  "SELECT COUNT(*) as n FROM seed_records WHERE dataset IN ('bls','uci') AND race = 'asian'"
 ).get() as { n: number };
 
 console.log('\n=== Pre-flight ===');
-console.log(`  Seed pool (General Pop, bls+uci+kaggle): ${poolRow.n} records`);
-console.log(`  Personas to generate: 500 (ratio 1:${Math.floor(poolRow.n / 500)})`);
+console.log(`  Seed pool (Asian Americans, bls+uci): ${poolRow.n} records`);
+console.log(`  Personas to generate: 300 (ratio 1:${Math.floor(poolRow.n / 300)})`);
 console.log(`  Models (${MODELS.length}): ${MODELS.map(m => m.name).join(', ')}`);
 console.log(`  Question set: consumer_preferences (12 questions, 4 reverse-coded)`);
 console.log(`  Concurrency: 10 parallel persona interviews`);
-console.log(`  Budget: $15.00`);
-console.log(`  NOTE: Uses third-person prompt framing (Chapala et al. 2025)`);
+console.log(`  Budget: $8.00`);
+console.log(`  Backstory mode: THIRD-PERSON (Chapala et al. 2025)`);
+console.log(`  Compare against: Exp #12 (Asian n=500, first-person, score=75)`);
 
 const config: ExperimentConfig = {
-  name: '11. General Population v4 — Third-Person (n=300)',
+  name: '13. Asian American Consumers v2 — Third-Person (n=300)',
   dataset: 'bls',
   personaCount: 300,
   modelIds: ALL_MODEL_IDS,
   questionSetId: 'consumer_preferences',
   temperature: 1.0,
-  budgetLimit: 10.0,
+  budgetLimit: 8.0,
   concurrency: 10,
   backstoryMode: 'third-person',
   filter: {
-    datasets: ['bls', 'uci', 'kaggle'],
+    datasets: ['bls', 'uci'],
+    race: 'asian',
   },
 };
 
@@ -81,60 +83,32 @@ try {
     console.log(`  ${b.type}: ${b.severity}${b.severity !== 'none' ? ` — ${b.description}` : ''}`);
   }
 
-  // Social desirability per-direction breakdown
   const sdBias = report.biases.find(b => b.type === 'social_desirability');
   if (sdBias?.details) {
     const d = sdBias.details as any;
-    if (d.positiveCodedStats) {
-      console.log(`    Positive-coded: mean=${d.positiveCodedStats.mean.toFixed(2)}, z=${d.positiveCodedStats.zScore.toFixed(2)} (n=${d.positiveCodedStats.n})`);
-    }
-    if (d.negativeCodedStats) {
-      console.log(`    Negative-coded: mean=${d.negativeCodedStats.mean.toFixed(2)}, z=${d.negativeCodedStats.zScore.toFixed(2)} (n=${d.negativeCodedStats.n})`);
-    }
-    if (d.directionGap != null) {
-      console.log(`    Direction gap: ${d.directionGap.toFixed(2)} (positive - negative coded means)`);
-    }
+    if (d.positiveCodedStats) console.log(`    Positive-coded: mean=${d.positiveCodedStats.mean.toFixed(2)}, z=${d.positiveCodedStats.zScore.toFixed(2)} (n=${d.positiveCodedStats.n})`);
+    if (d.negativeCodedStats) console.log(`    Negative-coded: mean=${d.negativeCodedStats.mean.toFixed(2)}, z=${d.negativeCodedStats.zScore.toFixed(2)} (n=${d.negativeCodedStats.n})`);
+    if (d.directionGap != null) console.log(`    Direction gap: ${d.directionGap.toFixed(2)} (positive - negative coded means)`);
   }
 
-  // Calibration
   console.log('\n--- Post-hoc Calibration ---');
   const cal = report.calibration;
   console.log(`  Method: ${cal.method} (confidence: ${cal.confidence})`);
   console.log(`  Raw overall mean: ${cal.rawMean.toFixed(2)} → Calibrated: ${cal.calibratedMean.toFixed(2)} (correction: ±${cal.correctionApplied.toFixed(2)})`);
   console.log(`  Direction gap: ${cal.directionGap.raw.toFixed(2)} → ${cal.directionGap.calibrated.toFixed(2)} (expected human: ${cal.directionGap.expectedHuman})`);
-  console.log(`  Positive-coded: ${cal.perDirection.positive.rawMean.toFixed(2)} → ${cal.perDirection.positive.calibratedMean.toFixed(2)}`);
-  console.log(`  Negative-coded: ${cal.perDirection.negative.rawMean.toFixed(2)} → ${cal.perDirection.negative.calibratedMean.toFixed(2)}`);
-  for (const note of cal.notes.slice(0, 3)) {
-    console.log(`  ${note}`);
-  }
 
-  // Compare vs previous general population experiments
-  console.log('\n--- Comparison vs Previous Experiments ---');
-  console.log(`  This experiment uses third-person prompt framing.`);
-  console.log(`  Exp #10 (GenPop v3, first-person): score=${63}, SD gap=${3.18}`);
-  console.log(`  If direction gap < 3.18, third-person prompt is reducing SD bias.`);
+  // Comparison
+  console.log('\n--- Comparison vs Exp #12 (first-person) ---');
+  console.log(`  Exp #12: score=75, SD gap=2.66, calibrated mean=3.83`);
+  console.log(`  This exp: score=${report.overallScore}, SD gap=${cal.directionGap.raw.toFixed(2)}, calibrated mean=${cal.calibratedMean.toFixed(2)}`);
+  const gapDelta = 2.66 - cal.directionGap.raw;
+  console.log(`  SD gap change: ${gapDelta > 0 ? '-' : '+'}${Math.abs(gapDelta).toFixed(2)} (${gapDelta > 0 ? 'IMPROVED' : 'WORSE'})`);
 
-  // Model Likert means
   const modelBias = report.biases.find(b => b.type === 'model_bias');
   if (modelBias?.details && (modelBias.details as any).modelMeans) {
     console.log('\n--- Model Likert Means ---');
     for (const m of (modelBias.details as any).modelMeans) {
       console.log(`  ${m.model.split('/')[1]?.padEnd(35)} mean=${m.mean.toFixed(2)} (n=${m.n})`);
-    }
-  }
-
-  // Response quality per model
-  const qualityBias = report.biases.find(b => b.type === 'response_quality');
-  if (qualityBias?.details && (qualityBias.details as any).modelStats) {
-    console.log('\n--- Model Response Quality ---');
-    const stats = (qualityBias.details as any).modelStats as Array<{
-      model: string; total: number; valid: number; validRate: number;
-      empty: number; refusals: number; unparseable: number; characterBreaks: number;
-    }>;
-    for (const m of stats) {
-      const pct = (m.validRate * 100).toFixed(1);
-      const flag = m.validRate < 0.7 ? ' *** UNRELIABLE' : '';
-      console.log(`  ${m.model.split('/')[1]?.padEnd(35)} valid=${pct}%  empty=${m.empty}  refusal=${m.refusals}  unparseable=${m.unparseable}${flag}`);
     }
   }
 
