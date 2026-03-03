@@ -115,47 +115,57 @@ export async function runExperiment(
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    for (let i = 0; i < personas.length; i++) {
-      const persona = personas[i];
+    const BATCH_SIZE = config.concurrency ?? 10;
+    let interviewed = 0;
+    let budgetExceeded = false;
 
-      // Budget check
+    for (let batchStart = 0; batchStart < personas.length; batchStart += BATCH_SIZE) {
+      // Budget check before each batch
       const budget = checkBudget(experimentId, config.budgetLimit);
       if (!budget.within) {
-        errors.push(`Budget exceeded ($${budget.spent.toFixed(4)} / $${config.budgetLimit}). Stopping at persona ${i + 1}/${personas.length}.`);
+        errors.push(`Budget exceeded ($${budget.spent.toFixed(4)} / $${config.budgetLimit}). Stopping at persona ${interviewed}/${personas.length}.`);
+        budgetExceeded = true;
         break;
       }
 
-      try {
-        const responses = await conductInterview(persona, questionSet.questions, experimentId, {
-          temperature: config.temperature,
-        });
+      const batch = personas.slice(batchStart, batchStart + BATCH_SIZE);
 
-        // Store responses
-        for (const r of responses) {
-          insertResponse.run(
-            persona.id,
-            r.questionId,
-            r.questionText,
-            r.questionType,
-            r.rawResponse,
-            r.parsedValue,
-            r.likertValue,
-            r.inputTokens,
-            r.outputTokens,
-            r.cost,
-          );
+      await Promise.all(batch.map(async (persona) => {
+        if (budgetExceeded) return;
+
+        try {
+          const responses = await conductInterview(persona, questionSet.questions, experimentId, {
+            temperature: config.temperature,
+          });
+
+          // Store responses (SQLite WAL handles concurrent writes)
+          for (const r of responses) {
+            insertResponse.run(
+              persona.id,
+              r.questionId,
+              r.questionText,
+              r.questionType,
+              r.rawResponse,
+              r.parsedValue,
+              r.likertValue,
+              r.inputTokens,
+              r.outputTokens,
+              r.cost,
+            );
+          }
+        } catch (err) {
+          const msg = `Persona ${persona.id} interview failed: ${(err as Error).message}`;
+          errors.push(msg);
+          console.error(msg);
         }
-      } catch (err) {
-        const msg = `Persona ${persona.id} interview failed: ${(err as Error).message}`;
-        errors.push(msg);
-        console.error(msg);
-      }
 
-      emit('interviewing', {
-        personasGenerated: personas.length,
-        personasInterviewed: i + 1,
-        currentPersona: `Persona ${i + 1} (${persona.modelId.split('/')[1]})`,
-      });
+        interviewed++;
+        emit('interviewing', {
+          personasGenerated: personas.length,
+          personasInterviewed: interviewed,
+          currentPersona: `Persona ${interviewed} (${persona.modelId.split('/')[1]})`,
+        });
+      }));
     }
 
     // Phase 4: Validate

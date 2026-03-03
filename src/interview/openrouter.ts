@@ -52,7 +52,7 @@ export async function chatCompletion(
   const {
     temperature = 1.0,
     maxTokens = 1024,
-    maxConcurrency = 5,
+    maxConcurrency = 20,
     maxRetries = 3,
   } = options;
 

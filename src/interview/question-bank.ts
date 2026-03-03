@@ -6,6 +6,10 @@ export interface Question {
   scale?: { min: number; max: number; labels?: Record<number, string> };
   followUp?: string; // optional "why?" probe
   dimension?: string; // which demographic/behavioral dimension this validates against
+  socialDesirabilityDirection?: 'positive' | 'negative' | 'neutral';
+  // positive = high score is socially desirable (current default assumption)
+  // negative = LOW score is socially desirable (reverse-coded)
+  // neutral = no clear social desirability direction
 }
 
 export interface QuestionSet {
@@ -36,6 +40,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         scale: { min: 1, max: 7, labels: { 1: 'Strongly prefer stores', 4: 'No preference', 7: 'Strongly prefer online' } },
         followUp: 'What drives your preference for that shopping channel?',
         dimension: 'age',
+        socialDesirabilityDirection: 'neutral',
       },
       {
         id: 'cp_brand_loyalty',
@@ -43,6 +48,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         type: 'likert',
         scale: { min: 1, max: 7 },
         followUp: 'Can you give an example of a brand you\'re particularly loyal or disloyal to, and why?',
+        socialDesirabilityDirection: 'neutral',
       },
       {
         id: 'cp_impulse_buying',
@@ -58,6 +64,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         scale: { min: 1, max: 7 },
         followUp: 'Describe a recent purchase where price was or wasn\'t the main factor.',
         dimension: 'income',
+        socialDesirabilityDirection: 'positive',
       },
       {
         id: 'cp_sustainable_premium',
@@ -73,6 +80,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         type: 'likert',
         scale: { min: 1, max: 7 },
         dimension: 'age',
+        socialDesirabilityDirection: 'neutral',
       },
       {
         id: 'cp_dining_frequency',
@@ -81,6 +89,36 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         scale: { min: 0, max: 21 },
         followUp: 'What typically drives your decision to eat out versus cook at home?',
         dimension: 'income',
+      },
+      // Reverse-coded questions (social desirability direction: negative)
+      // Honest/realistic answer is HIGH, but socially desirable answer is LOW
+      {
+        id: 'cp_regret_purchases',
+        text: 'How often do you regret purchases you\'ve made? (1 = never, 7 = very often)',
+        type: 'likert',
+        scale: { min: 1, max: 7, labels: { 1: 'Never', 4: 'Sometimes', 7: 'Very often' } },
+        socialDesirabilityDirection: 'negative',
+      },
+      {
+        id: 'cp_judge_brands',
+        text: 'How much do you judge people based on the brands they buy? (1 = not at all, 7 = very strongly)',
+        type: 'likert',
+        scale: { min: 1, max: 7, labels: { 1: 'Not at all', 4: 'Somewhat', 7: 'Very strongly' } },
+        socialDesirabilityDirection: 'negative',
+      },
+      {
+        id: 'cp_ignore_reviews',
+        text: 'How often do you buy products without reading reviews or researching? (1 = never, 7 = always)',
+        type: 'likert',
+        scale: { min: 1, max: 7, labels: { 1: 'Never', 4: 'Sometimes', 7: 'Always' } },
+        socialDesirabilityDirection: 'negative',
+      },
+      {
+        id: 'cp_wasteful_spending',
+        text: 'How often do you spend money on things you don\'t really need? (1 = never, 7 = very often)',
+        type: 'likert',
+        scale: { min: 1, max: 7, labels: { 1: 'Never', 4: 'Sometimes', 7: 'Very often' } },
+        socialDesirabilityDirection: 'negative',
       },
     ],
   },
@@ -103,6 +141,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         scale: { min: 1, max: 7 },
         followUp: 'What aspect of your finances causes the most stress?',
         dimension: 'income',
+        socialDesirabilityDirection: 'neutral',
       },
       {
         id: 'fa_spending_priority',
@@ -117,6 +156,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         type: 'likert',
         scale: { min: 1, max: 7 },
         dimension: 'education',
+        socialDesirabilityDirection: 'neutral',
       },
       {
         id: 'fa_retirement_confidence',
@@ -139,6 +179,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         type: 'likert',
         scale: { min: 1, max: 7 },
         dimension: 'education',
+        socialDesirabilityDirection: 'positive',
       },
       {
         id: 'fa_economic_outlook',
@@ -160,6 +201,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         type: 'likert',
         scale: { min: 1, max: 7 },
         dimension: 'age',
+        socialDesirabilityDirection: 'positive',
       },
       {
         id: 'ta_social_media',
@@ -175,6 +217,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         scale: { min: 1, max: 7 },
         followUp: 'In what areas do you think AI recommendations are helpful or harmful?',
         dimension: 'education',
+        socialDesirabilityDirection: 'neutral',
       },
       {
         id: 'ta_privacy_concern',
@@ -183,6 +226,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         scale: { min: 1, max: 7 },
         followUp: 'What steps do you take to protect your online privacy?',
         dimension: 'age',
+        socialDesirabilityDirection: 'positive',
       },
       {
         id: 'ta_smart_home',
@@ -211,6 +255,7 @@ export const BUILT_IN_QUESTION_SETS: QuestionSet[] = [
         type: 'likert',
         scale: { min: 1, max: 7 },
         dimension: 'age',
+        socialDesirabilityDirection: 'neutral',
       },
     ],
   },

@@ -39,7 +39,7 @@ const api = {
 };
 
 // ---- Navigation ----
-const pages = ['dashboard', 'new-experiment', 'datasets', 'results', 'experiment', 'methodology'];
+const pages = ['dashboard', 'new-experiment', 'datasets', 'results', 'experiment', 'methodology', 'library'];
 let currentPage = 'dashboard';
 
 document.querySelectorAll('nav button').forEach(btn => {
@@ -59,6 +59,7 @@ function navigateTo(page) {
   if (page === 'new-experiment') loadExperimentForm();
   if (page === 'datasets') loadDatasets();
   if (page === 'methodology') loadMethodology();
+  if (page === 'library') loadLibrary();
 }
 
 // ---- Dashboard ----

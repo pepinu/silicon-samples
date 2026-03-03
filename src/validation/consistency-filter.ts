@@ -17,19 +17,21 @@ export interface FilterResult {
 }
 
 const REFUSAL_PATTERNS = [
-  /\bi cannot\b/i,
-  /\bi can't\b/i,
+  // AI identity reveals (always a refusal)
   /\bas an ai\b/i,
   /\bas a language model\b/i,
-  /\bi don't have personal/i,
-  /\bi'm not able to/i,
-  /\bi am not able to/i,
-  /\bi don't actually/i,
   /\bi'm an artificial/i,
   /\blarge language model\b/i,
-  /\bI don't have experiences\b/i,
-  /\bI don't have preferences\b/i,
-  /\bI'm just a\b/i,
+  // AI-specific refusal phrasing (not general "I can't afford" etc.)
+  /\bi cannot (answer|respond|provide|engage|participate|assist|help with)\b/i,
+  /\bi can't (answer|respond|provide|engage|participate|assist|help with)\b/i,
+  /\bi'm not able to (answer|respond|provide|engage|participate)\b/i,
+  /\bi am not able to (answer|respond|provide|engage|participate)\b/i,
+  /\bi don't have personal (experience|opinion|feeling|thought)/i,
+  /\bi don't actually (have|exist|experience|feel|think)/i,
+  /\bi don't have experiences\b/i,
+  /\bi don't have preferences\b/i,
+  /\bi'm just a (computer|program|bot|model|tool)\b/i,
 ];
 
 const CHARACTER_BREAK_PATTERNS = [

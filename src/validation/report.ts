@@ -5,6 +5,7 @@ import { klDivergence, type KLResult } from './kl-divergence.js';
 import { varianceRatio, type VarianceResult } from './variance.js';
 import { filterExperimentResponses } from './consistency-filter.js';
 import { runAllBiasChecks, type BiasResult } from './bias-detector.js';
+import { calibrateExperiment, type CalibrationResult } from './calibration.js';
 import type { Distribution } from '../data/distributions.js';
 
 export interface ValidationReport {
@@ -27,6 +28,7 @@ export interface ValidationReport {
     result: VarianceResult;
   }>;
   biases: BiasResult[];
+  calibration: CalibrationResult;
   overallScore: number; // 0-100
   overallVerdict: 'pass' | 'marginal' | 'fail';
   effectiveHumanEquivalent: number;
@@ -107,9 +109,15 @@ export function generateReport(experimentId: number): ValidationReport {
   const experiment = db.prepare('SELECT * FROM experiments WHERE id = ?').get(experimentId) as {
     dataset: string;
     persona_count: number;
+    config_json: string | null;
   };
 
   if (!experiment) throw new Error(`Experiment ${experimentId} not found`);
+
+  // Extract actual datasets and full filter from config_json
+  const configData = experiment.config_json ? JSON.parse(experiment.config_json) : {};
+  const seedDatasets: string | string[] = configData.filter?.datasets || experiment.dataset;
+  const seedFilter = configData.filter || undefined;
 
   // Step 1: Filter responses
   const filtering = filterExperimentResponses(experimentId);
@@ -121,7 +129,7 @@ export function generateReport(experimentId: number): ValidationReport {
 
   for (const dim of dimensions) {
     try {
-      const seedDist = getDistribution(experiment.dataset, dim);
+      const seedDist = getDistribution(seedDatasets, dim, seedFilter);
       if (seedDist.bins.length < 2 || seedDist.total < 5) continue;
 
       const synthCounts = buildResponseDistribution(experimentId, dim, seedDist);
@@ -181,6 +189,9 @@ export function generateReport(experimentId: number): ValidationReport {
   // Step 4: Bias detection
   const biases = runAllBiasChecks(experimentId);
 
+  // Step 4b: Post-hoc calibration
+  const calibration = calibrateExperiment(experimentId);
+
   // Step 5: Compute overall score
   let score = 100;
 
@@ -219,6 +230,7 @@ export function generateReport(experimentId: number): ValidationReport {
     distributional,
     variance: varianceResults,
     biases,
+    calibration,
     overallScore: score,
     overallVerdict,
     effectiveHumanEquivalent,

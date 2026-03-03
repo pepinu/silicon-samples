@@ -1,4 +1,5 @@
 import { getDb } from '../data/db.js';
+import { getAllQuestionSets } from '../interview/question-bank.js';
 
 /**
  * Bias detection suite for silicon samples.
@@ -15,43 +16,100 @@ export interface BiasResult {
 /**
  * Social desirability bias: LLMs tend to give "nice" answers.
  * Detected by checking if positive-valence responses are overrepresented.
+ * Enhanced: computes separate Z-scores for positive-coded and negative-coded (reverse) questions
+ * and reports the gap between them as a diagnostic.
  */
 export function detectSocialDesirability(experimentId: number): BiasResult {
   const db = getDb();
 
-  // For likert questions, check if mean is significantly above midpoint
+  // Build lookup of question SD direction from question bank
+  const sdDirectionMap = new Map<string, 'positive' | 'negative' | 'neutral'>();
+  for (const qs of getAllQuestionSets()) {
+    for (const q of qs.questions) {
+      if (q.type === 'likert' && q.socialDesirabilityDirection) {
+        sdDirectionMap.set(q.id, q.socialDesirabilityDirection);
+      }
+    }
+  }
+
+  // For likert questions, get values with question_id for direction lookup
   const rows = db.prepare(`
-    SELECT r.likert_value
+    SELECT r.likert_value, r.question_id
     FROM responses r
     JOIN personas p ON r.persona_id = p.id
     WHERE p.experiment_id = ? AND r.question_type = 'likert' AND r.is_valid = 1 AND r.likert_value IS NOT NULL
-  `).all(experimentId) as Array<{ likert_value: number }>;
+  `).all(experimentId) as Array<{ likert_value: number; question_id: string }>;
 
   if (rows.length < 10) {
     return { type: 'social_desirability', description: 'Insufficient data', severity: 'none', details: { n: rows.length } };
   }
 
-  const values = rows.map(r => r.likert_value);
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const midpoint = 4; // midpoint of 1-7 scale
 
-  // Check how far mean deviates from midpoint
+  // Split by SD direction
+  const positiveVals: number[] = [];
+  const negativeVals: number[] = [];
+  const allValues: number[] = [];
+
+  for (const r of rows) {
+    allValues.push(r.likert_value);
+    const dir = sdDirectionMap.get(r.question_id);
+    if (dir === 'positive') positiveVals.push(r.likert_value);
+    else if (dir === 'negative') negativeVals.push(r.likert_value);
+  }
+
+  // Overall stats
+  const mean = allValues.reduce((a, b) => a + b, 0) / allValues.length;
   const deviation = mean - midpoint;
-  const stdDev = Math.sqrt(values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length);
-  const zScore = stdDev > 0 ? deviation / (stdDev / Math.sqrt(values.length)) : 0;
+  const stdDev = Math.sqrt(allValues.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / allValues.length);
+  const zScore = stdDev > 0 ? deviation / (stdDev / Math.sqrt(allValues.length)) : 0;
+
+  // Per-direction stats
+  const computeStats = (vals: number[]) => {
+    if (vals.length === 0) return null;
+    const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const sd = Math.sqrt(vals.reduce((s, v) => s + Math.pow(v - m, 2), 0) / vals.length);
+    const z = sd > 0 ? (m - midpoint) / (sd / Math.sqrt(vals.length)) : 0;
+    return { mean: m, stdDev: sd, zScore: z, n: vals.length };
+  };
+
+  const positiveStats = computeStats(positiveVals);
+  const negativeStats = computeStats(negativeVals);
+
+  // The gap: if SD bias exists, positive-coded questions will have high means
+  // and negative-coded questions will have LOW means (LLM avoids admitting bad behavior).
+  // A large gap (positive mean - negative mean) indicates strong SD bias.
+  const directionGap = positiveStats && negativeStats
+    ? positiveStats.mean - negativeStats.mean
+    : null;
 
   let severity: BiasResult['severity'] = 'none';
   if (Math.abs(zScore) > 3) severity = 'high';
   else if (Math.abs(zScore) > 2) severity = 'medium';
   else if (Math.abs(zScore) > 1.5) severity = 'low';
 
+  let description: string;
+  if (deviation > 0) {
+    description = 'Responses skew positive (socially desirable direction)';
+  } else if (deviation < 0) {
+    description = 'Responses skew negative';
+  } else {
+    description = 'No significant skew detected';
+  }
+  if (directionGap !== null && directionGap > 1.0) {
+    description += ` | Direction gap: ${directionGap.toFixed(2)} (positive-coded ${positiveStats!.mean.toFixed(2)} vs negative-coded ${negativeStats!.mean.toFixed(2)})`;
+  }
+
   return {
     type: 'social_desirability',
-    description: deviation > 0
-      ? 'Responses skew positive (socially desirable direction)'
-      : deviation < 0 ? 'Responses skew negative' : 'No significant skew detected',
+    description,
     severity,
-    details: { mean, midpoint, deviation, zScore, n: values.length },
+    details: {
+      mean, midpoint, deviation, zScore, n: allValues.length,
+      positiveCodedStats: positiveStats,
+      negativeCodedStats: negativeStats,
+      directionGap,
+    },
   };
 }
 
@@ -200,11 +258,83 @@ export function detectModelBias(experimentId: number): BiasResult {
   };
 }
 
+/**
+ * Response quality: per-model validity rates, empty/refusal breakdown.
+ * Flags models with <70% validity as unreliable.
+ */
+export function detectResponseQuality(experimentId: number): BiasResult {
+  const db = getDb();
+
+  const rows = db.prepare(`
+    SELECT p.model_id,
+      COUNT(*) as total,
+      SUM(CASE WHEN r.is_valid = 1 THEN 1 ELSE 0 END) as valid,
+      SUM(CASE WHEN r.rejection_reason = 'empty_response' THEN 1 ELSE 0 END) as empty,
+      SUM(CASE WHEN r.rejection_reason = 'refusal' THEN 1 ELSE 0 END) as refusals,
+      SUM(CASE WHEN r.rejection_reason = 'unparseable' THEN 1 ELSE 0 END) as unparseable,
+      SUM(CASE WHEN r.rejection_reason = 'character_break' THEN 1 ELSE 0 END) as character_breaks
+    FROM responses r
+    JOIN personas p ON r.persona_id = p.id
+    WHERE p.experiment_id = ?
+    GROUP BY p.model_id
+  `).all(experimentId) as Array<{
+    model_id: string; total: number; valid: number;
+    empty: number; refusals: number; unparseable: number; character_breaks: number;
+  }>;
+
+  if (rows.length === 0) {
+    return { type: 'response_quality', description: 'No responses', severity: 'none', details: {} };
+  }
+
+  const modelStats = rows.map(r => ({
+    model: r.model_id,
+    total: r.total,
+    valid: r.valid,
+    validRate: r.total > 0 ? r.valid / r.total : 0,
+    empty: r.empty,
+    refusals: r.refusals,
+    unparseable: r.unparseable,
+    characterBreaks: r.character_breaks,
+  })).sort((a, b) => a.validRate - b.validRate);
+
+  const unreliable = modelStats.filter(m => m.validRate < 0.7);
+  const totalResponses = rows.reduce((s, r) => s + r.total, 0);
+  const totalValid = rows.reduce((s, r) => s + r.valid, 0);
+  const overallRate = totalResponses > 0 ? totalValid / totalResponses : 0;
+
+  // Wasted cost: responses from unreliable models that were rejected
+  const wastedResponses = unreliable.reduce((s, m) => s + (m.total - m.valid), 0);
+
+  let severity: BiasResult['severity'] = 'none';
+  if (unreliable.length > 0 && overallRate < 0.7) severity = 'high';
+  else if (unreliable.length > 0) severity = 'medium';
+  else if (overallRate < 0.9) severity = 'low';
+
+  const description = unreliable.length > 0
+    ? `${unreliable.length} model(s) below 70% validity: ${unreliable.map(m => `${m.model.split('/')[1]} (${(m.validRate * 100).toFixed(0)}%)`).join(', ')}`
+    : `All models above 70% validity (overall ${(overallRate * 100).toFixed(1)}%)`;
+
+  return {
+    type: 'response_quality',
+    description,
+    severity,
+    details: {
+      overallValidRate: overallRate,
+      totalResponses,
+      totalValid,
+      wastedResponses,
+      modelStats,
+      unreliableModels: unreliable.map(m => m.model),
+    },
+  };
+}
+
 export function runAllBiasChecks(experimentId: number): BiasResult[] {
   return [
     detectSocialDesirability(experimentId),
     detectModeCollapse(experimentId),
     detectCaricaturing(experimentId),
     detectModelBias(experimentId),
+    detectResponseQuality(experimentId),
   ];
 }

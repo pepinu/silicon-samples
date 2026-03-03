@@ -9,6 +9,8 @@ export interface ExperimentConfig {
   temperature: number;
   budgetLimit: number;
   filter?: SampleFilter;
+  /** Number of concurrent persona interviews per batch (default: 10) */
+  concurrency?: number;
 }
 
 export type ExperimentStatus = 'pending' | 'sampling' | 'interviewing' | 'validating' | 'completed' | 'failed' | 'cancelled';

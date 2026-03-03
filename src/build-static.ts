@@ -21,11 +21,16 @@ const DB_PATH = path.resolve(PROJECT_ROOT, process.env.DB_PATH || 'data/silicon-
 
 // Model config (duplicated from config.ts to avoid side effects)
 const MODELS = [
-  { id: 'mistralai/mistral-small-3.2-24b-instruct', name: 'Mistral Small', inputCostPer1M: 0.10, outputCostPer1M: 0.30, weight: 3 },
-  { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', inputCostPer1M: 0.32, outputCostPer1M: 0.89, weight: 3 },
-  { id: 'google/gemini-2.5-flash', name: 'Gemini Flash', inputCostPer1M: 0.30, outputCostPer1M: 2.50, weight: 2 },
-  { id: 'openai/gpt-4.1-mini', name: 'GPT-4.1 Mini', inputCostPer1M: 0.40, outputCostPer1M: 1.60, weight: 1 },
+  // Western models
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', inputCostPer1M: 0.50, outputCostPer1M: 3.00, weight: 2 },
   { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku', inputCostPer1M: 1.00, outputCostPer1M: 5.00, weight: 1 },
+  { id: 'mistralai/mistral-small-3.2-24b-instruct', name: 'Mistral Small', inputCostPer1M: 0.10, outputCostPer1M: 0.30, weight: 1 },
+  { id: 'x-ai/grok-3-mini-beta', name: 'Grok 3 Mini', inputCostPer1M: 0.30, outputCostPer1M: 0.50, weight: 1 },
+  // Chinese models
+  { id: 'deepseek/deepseek-v3.2', name: 'DeepSeek V3.2', inputCostPer1M: 0.25, outputCostPer1M: 0.40, weight: 2 },
+  { id: 'bytedance-seed/seed-2.0-mini', name: 'Seed 2.0 Mini', inputCostPer1M: 0.10, outputCostPer1M: 0.40, weight: 2 },
+  { id: 'minimax/minimax-m2.5-20260211', name: 'MiniMax M2.5', inputCostPer1M: 0.30, outputCostPer1M: 0.30, weight: 2 },
+  { id: 'xiaomi/mimo-v2-flash-20251210', name: 'Xiaomi MiMo V2', inputCostPer1M: 0.10, outputCostPer1M: 0.10, weight: 2 },
 ];
 
 const DEFAULTS = {
