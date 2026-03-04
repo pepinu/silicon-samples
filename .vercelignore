@@ -1,9 +1,8 @@
 datasets/
 papers/
-data/
 src/
 node_modules/
 *.db
 *.log
 .claude/
-experiment-*.log
+data/silicon-samples.db
