@@ -28,122 +28,21 @@
     <div class="container">
       <h1><span>Si</span>licon Samples</h1>
       <nav>
-        <button class="active" data-page="dashboard">Dashboard</button>
-        <button data-page="new-experiment">New Experiment</button>
-        <button data-page="datasets">Datasets</button>
+        <button class="active" data-page="home">Home</button>
         <button data-page="methodology">Methodology</button>
+        <button data-page="results">Results</button>
         <button data-page="library">Library</button>
       </nav>
     </div>
   </header>
 
   <main class="container">
-    <!-- Dashboard -->
-    <section id="page-dashboard">
-      <div class="grid grid-4">
-        <div class="card stat-card">
-          <div class="value" id="stat-experiments">-</div>
-          <div class="label">Experiments</div>
-        </div>
-        <div class="card stat-card">
-          <div class="value" id="stat-personas">-</div>
-          <div class="label">Personas Generated</div>
-        </div>
-        <div class="card stat-card">
-          <div class="value" id="stat-cost">-</div>
-          <div class="label">Total Cost</div>
-        </div>
-        <div class="card stat-card">
-          <div class="value" id="stat-datasets">-</div>
-          <div class="label">Datasets Loaded</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Experiments</h2>
-        <div id="experiments-list"></div>
-      </div>
+    <!-- Home -->
+    <section id="page-home">
+      <div id="home-content"></div>
     </section>
 
-    <!-- New Experiment -->
-    <section id="page-new-experiment" class="hidden">
-      <div class="card">
-        <h2>Create Experiment</h2>
-        <form id="experiment-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="exp-name">Experiment Name</label>
-              <input type="text" id="exp-name" placeholder="e.g., Consumer Study Q1 2026">
-            </div>
-            <div class="form-group">
-              <label for="exp-dataset">Dataset</label>
-              <select id="exp-dataset"></select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="exp-personas">Number of Personas</label>
-              <input type="number" id="exp-personas" min="5" max="500" value="50">
-            </div>
-            <div class="form-group">
-              <label for="exp-questions">Question Set</label>
-              <select id="exp-questions"></select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="exp-temp">Temperature</label>
-              <input type="number" id="exp-temp" min="0" max="2" step="0.1" value="1.0">
-            </div>
-            <div class="form-group">
-              <label for="exp-budget">Budget Limit ($)</label>
-              <input type="number" id="exp-budget" min="0.10" max="100" step="0.50" value="5.00">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Models</label>
-            <div class="checkbox-group" id="exp-models"></div>
-          </div>
-
-          <button type="submit" class="btn btn-primary" id="btn-run">Run Experiment</button>
-        </form>
-      </div>
-
-      <!-- Progress -->
-      <div class="card hidden" id="experiment-progress">
-        <h2>Experiment Running</h2>
-        <div class="grid grid-3">
-          <div class="stat-card">
-            <div class="value" id="prog-personas">0/0</div>
-            <div class="label">Personas Interviewed</div>
-          </div>
-          <div class="stat-card">
-            <div class="value" id="prog-cost">$0.00</div>
-            <div class="label">Cost</div>
-          </div>
-          <div class="stat-card">
-            <div class="value" id="prog-status">Starting...</div>
-            <div class="label">Status</div>
-          </div>
-        </div>
-        <div class="progress-bar"><div class="fill" id="prog-bar" style="width:0%"></div></div>
-        <div class="status-log" id="prog-log"></div>
-      </div>
-    </section>
-
-    <!-- Datasets -->
-    <section id="page-datasets" class="hidden">
-      <div class="card">
-        <h2>Loaded Datasets</h2>
-        <div id="datasets-list"></div>
-      </div>
-      <div id="dataset-detail"></div>
-    </section>
-
-    <!-- Results (dynamic) -->
+    <!-- Results -->
     <section id="page-results" class="hidden">
       <div id="results-content"></div>
     </section>
@@ -192,7 +91,9 @@
     });
   </script>
   <script src="/experiment.js"></script>
+  <script src="/home.js"></script>
   <script src="/methodology.js"></script>
+  <script src="/results-page.js"></script>
   <script src="/library.js"></script>
   <script src="/app.js"></script>
 </body>

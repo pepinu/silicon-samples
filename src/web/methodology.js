@@ -25,7 +25,7 @@ window.loadMethodology = async function() {
     <!-- Print controls -->
     <div id="print-controls" style="display:flex;justify-content:flex-end;gap:0.5rem;margin-bottom:1rem">
       <button class="btn btn-outline btn-sm" onclick="window.print()">Print / Export PDF</button>
-      <button class="btn btn-outline btn-sm" onclick="navigateTo('dashboard')">Back to Dashboard</button>
+      <button class="btn btn-outline btn-sm" onclick="navigateTo('results')">View Results</button>
     </div>
 
     <!-- 1. Executive Summary -->
@@ -49,9 +49,29 @@ window.loadMethodology = async function() {
       <p>Imagine you need to understand how single mothers earning under $30K feel about brand loyalty. Traditionally, you'd spend $8,000 and wait 6 weeks to recruit and interview 10 of them. With silicon sampling, you take real government data about people matching that profile, give an AI a "character sheet" based on each real person's demographics, and then interview the AI <em>as if it were</em> that person. You do this 500 times across multiple AI models, then statistically validate that the synthetic responses look like real data. The result: directional consumer insights for a niche segment at the cost of a coffee.</p>
     </div>
 
-    <!-- 2. The Problem -->
+    <!-- 2. Seed Data Sources -->
     <div class="card doc-section">
-      <h2>2. The Problem: Underrepresented Markets Are Invisible</h2>
+      <h2>2. Seed Data Sources</h2>
+      <p>Our personas are grounded in real consumer data from three complementary sources, totaling ${data.totalSeedRecords.toLocaleString()} records:</p>
+      <table>
+        <thead><tr><th>Dataset</th><th>Records</th><th>What It Provides</th></tr></thead>
+        <tbody>
+          ${data.datasetBreakdown.map(d => {
+            const descriptions = {
+              bls: 'Bureau of Labor Statistics Consumer Expenditure Survey — real household spending patterns, income, demographics',
+              uci: 'UCI Adult Census Income dataset — 48K records with education, occupation, demographic distributions',
+              kaggle: 'Kaggle Customer Personality Analysis — 2,240 customers with campaign response and purchase behavior',
+            };
+            return '<tr><td><strong>' + d.dataset.toUpperCase() + '</strong></td><td>' + d.count.toLocaleString() + '</td><td>' + (descriptions[d.dataset] || d.dataset) + '</td></tr>';
+          }).join('')}
+        </tbody>
+      </table>
+      <p style="margin-top:0.75rem">By merging these datasets, we get broad demographic coverage (BLS + UCI) with behavioral depth (Kaggle). Experiment filters can target specific subgroups — e.g., Black consumers from BLS+UCI (5,641 records) or low-income households under $25K (5,571 records).</p>
+    </div>
+
+    <!-- 3. The Problem -->
+    <div class="card doc-section">
+      <h2>3. The Problem: Underrepresented Markets Are Invisible</h2>
       <p>Minority and underrepresented consumer segments are systematically underserved by market research. Traditional focus groups cost $4,000-$12,000 per session and take 4-6 weeks to recruit. For niche demographics (Native American consumers, single mothers earning under $30K, Asian-American tech adopters), these economics make research prohibitively expensive.</p>
       <table>
         <thead><tr><th>Method</th><th>Cost per Participant</th><th>Timeline</th><th>Scalability</th></tr></thead>
@@ -67,7 +87,7 @@ window.loadMethodology = async function() {
 
     <!-- 3. Academic Foundation -->
     <div class="card doc-section">
-      <h2>3. Academic Foundation</h2>
+      <h2>4. Academic Foundation</h2>
       <p>Silicon sampling builds on a growing body of peer-reviewed research demonstrating that LLMs can simulate human survey responses with measurable fidelity:</p>
       <div class="doc-paper">
         <div class="authors">Argyle et al. (2023) &mdash; "Out of One, Many"</div>
@@ -105,7 +125,7 @@ window.loadMethodology = async function() {
 
     <!-- 4. Data Sources -->
     <div class="card doc-section">
-      <h2>4. Seed Data: Where the Personas Come From</h2>
+      <h2>5. Seed Data: Where the Personas Come From</h2>
       <p>Every synthetic persona begins with a <strong>real person's demographics</strong> drawn from government and research survey data. This is the key difference between silicon sampling and simply asking an AI to "pretend to be a 34-year-old." The seed data anchors the simulation in real population distributions.</p>
       <p>Our seed pool totals <strong>${data.totalSeedRecords.toLocaleString()} records</strong>:</p>
       <table>
@@ -126,7 +146,7 @@ window.loadMethodology = async function() {
 
     <!-- 5. How It Works -->
     <div class="card doc-section">
-      <h2>5. How It Works: The Pipeline</h2>
+      <h2>6. How It Works: The Pipeline</h2>
       <p>The silicon sampling pipeline has 8 stages. Each stage is designed to maximize fidelity while catching and quantifying errors:</p>
       <div class="doc-pipeline">
         <div class="step">1. Seed Data</div><div class="arrow">&rarr;</div>
@@ -152,7 +172,7 @@ window.loadMethodology = async function() {
 
     <!-- 6. Model Ensemble -->
     <div class="card doc-section">
-      <h2>6. Model Ensemble: Why Multiple AI Models Matter</h2>
+      <h2>7. Model Ensemble: Why Multiple AI Models Matter</h2>
       <p>We use multiple LLMs from different vendors to generate responses. This is critical because each model has different training data, RLHF calibration, cultural biases, and response tendencies. A single-model approach inherits that model's systematic biases.</p>
       <table>
         <thead><tr><th>Model</th><th>Personas</th><th>Cost</th><th>Cost/Persona</th></tr></thead>
@@ -168,7 +188,7 @@ window.loadMethodology = async function() {
 
     <!-- 7. Validation Framework -->
     <div class="card doc-section">
-      <h2>7. Validation Framework</h2>
+      <h2>8. Validation Framework</h2>
       <p>Every experiment is automatically validated using 5 independent methods. The combined result is a 0-100 score that quantifies how "real" the synthetic data looks. This is not optional &mdash; validation is built into every run.</p>
 
       <h3>7a. Consistency Filtering</h3>
@@ -201,7 +221,7 @@ window.loadMethodology = async function() {
 
     <!-- 8. Results -->
     <div class="card doc-section">
-      <h2>8. Experiment Results</h2>
+      <h2>9. Experiment Results</h2>
       <p>We ran ${data.experiments.length} experiments across minority segments and general population:</p>
       <table>
         <thead><tr>
@@ -237,7 +257,7 @@ window.loadMethodology = async function() {
 
     <!-- 9. What Works Well -->
     <div class="card doc-section">
-      <h2>9. What Works Well</h2>
+      <h2>10. What Works Well</h2>
 
       <div class="doc-callout success">
         <strong>Distributional fidelity is excellent.</strong> Across our general population experiments (n=500), all four demographic dimensions (age, income, education, marital status) pass chi-squared tests and achieve KL-divergence &lt; 0.01. The synthetic cohort's demographics are statistically indistinguishable from the seed population. This aligns with Argyle et al.'s finding of >0.90 correlation with ANES data.
@@ -266,7 +286,7 @@ window.loadMethodology = async function() {
 
     <!-- 10. What Needs Work -->
     <div class="card doc-section">
-      <h2>10. What Needs Work: Known Problems & Required Tinkering</h2>
+      <h2>11. What Needs Work: Known Problems & Required Tinkering</h2>
 
       <h3>10a. Social Desirability Bias (Critical)</h3>
       <p>This is the single biggest challenge and the primary reason scores are in the 60s rather than 70s+. All LLMs, regardless of vendor or origin, give systematically "nice" answers:</p>
@@ -305,7 +325,7 @@ window.loadMethodology = async function() {
 
     <!-- 11. Where This Could Be Used -->
     <div class="card doc-section">
-      <h2>11. Use Cases: Where Silicon Sampling Adds Value</h2>
+      <h2>12. Use Cases: Where Silicon Sampling Adds Value</h2>
 
       <h3>Strong Fit (High Confidence)</h3>
       <table>
@@ -380,7 +400,7 @@ window.loadMethodology = async function() {
 
     <!-- 12. Path to Product -->
     <div class="card doc-section">
-      <h2>12. Path to a Viable Silicon Sample Product</h2>
+      <h2>13. Path to a Viable Silicon Sample Product</h2>
       <p>Based on our experimental results and the academic literature, here is the roadmap from research prototype to commercial product:</p>
 
       <h3>Phase 1: Calibration Engine (Months 1-3)</h3>
@@ -421,7 +441,7 @@ window.loadMethodology = async function() {
 
     <!-- 13. Premortem: What Could Go Wrong -->
     <div class="card doc-section">
-      <h2>13. Premortem: What Could Go Wrong</h2>
+      <h2>14. Premortem: What Could Go Wrong</h2>
       <p>A premortem analysis of the risks that could make this project fail, ordered by likelihood and impact:</p>
 
       <table>
@@ -475,7 +495,7 @@ window.loadMethodology = async function() {
 
     <!-- 14. Traditional Market Research Know-How -->
     <div class="card doc-section">
-      <h2>14. The Kantar Problem: What Traditional Firms Know That We Don't</h2>
+      <h2>15. The Kantar Problem: What Traditional Firms Know That We Don't</h2>
       <p>Companies like Kantar, Ipsos, and Nielsen have decades of institutional knowledge about running consumer research. Silicon sampling needs to either replicate or explicitly work around this expertise. Here's what they know and we need:</p>
 
       <h3>14a. Recruitment & Sampling Expertise</h3>
@@ -525,7 +545,7 @@ window.loadMethodology = async function() {
 
     <!-- 15. Alignment with Previous Research -->
     <div class="card doc-section">
-      <h2>15. How Our Results Align with Published Research</h2>
+      <h2>16. How Our Results Align with Published Research</h2>
       <table>
         <thead><tr><th>Finding</th><th>Our Result</th><th>Literature</th><th>Aligned?</th></tr></thead>
         <tbody>
@@ -583,7 +603,7 @@ window.loadMethodology = async function() {
 
     <!-- 16. Conclusion -->
     <div class="card doc-section">
-      <h2>16. Conclusion</h2>
+      <h2>17. Conclusion</h2>
       <p>Silicon sampling works. The distributional fidelity is excellent, the economics are transformative, and the multi-model ensemble approach produces diverse, non-collapsed response distributions. The technology is ready for upstream, exploratory market research &mdash; especially for underrepresented segments that traditional methods cannot reach.</p>
       <p>The single remaining barrier is <strong>social desirability bias</strong>, which is a known, measured, and partially solvable problem. Post-hoc statistical calibration against a small set of real human responses is the most promising path forward, and is standard practice in traditional survey research as well.</p>
       <p>The competitive moat for a silicon sampling product is not the pipeline (which is implementable from published research) but the <strong>calibration data</strong>, the <strong>model reliability database</strong>, and the <strong>question bank quality</strong>. The first company to build proprietary calibration datasets across industries and demographics will have a significant, compounding advantage.</p>
@@ -596,7 +616,7 @@ window.loadMethodology = async function() {
     <!-- Print/Export -->
     <div id="print-controls" style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:2rem">
       <button class="btn btn-primary" onclick="window.print()">Print / Export PDF</button>
-      <button class="btn btn-outline" onclick="navigateTo('dashboard')">Back to Dashboard</button>
+      <button class="btn btn-outline" onclick="navigateTo('results')">See Experiment Results</button>
     </div>
   `;
 };

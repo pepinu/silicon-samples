@@ -126,7 +126,7 @@ window.loadExperiment = async function(id) {
             temp=${exp.temperature} &middot; ${new Date(exp.created_at).toLocaleString()}
           </p>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="navigateTo('dashboard')">Back</button>
+        <button class="btn btn-outline btn-sm" onclick="navigateTo('results')">Back</button>
       </div>
     </div>
 
@@ -398,7 +398,7 @@ window.loadExperiment = async function(id) {
     <div style="display:flex;gap:0.5rem;margin-bottom:2rem">
       <a href="/api/results/${id}/export" class="btn btn-outline">Export JSON</a>
       <a href="/api/results/${id}/export?format=csv" class="btn btn-outline">Export CSV</a>
-      <button class="btn btn-outline" onclick="navigateTo('dashboard')">Back to Dashboard</button>
+      <button class="btn btn-outline" onclick="navigateTo('results')">Back to Results</button>
     </div>
   `;
 
